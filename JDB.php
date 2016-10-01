@@ -1,10 +1,5 @@
 <?php
 
-define('_DB_HOST', 'localhost');
-define('_DB_SOCK', '/tmp/mariadb55.sock');
-define('_DB_NAME', 'knet');
-define('_DB_USER', 'knet');
-define('_DB_PASSWD', 'VrYyVbg4J8NN3gFu');
 
 class Jdb {
 
@@ -30,8 +25,8 @@ class Jdb {
 
   private function getResult($sQuery) {
 
-    $sQuery = <<<SQL
-    $sQuery 
+$sQuery = <<<SQL
+$sQuery
 SQL;
 
     if (!$result = $this->link->query($sQuery)) {
@@ -40,16 +35,17 @@ SQL;
 
     return $result;
   }
-  
-    public function getRows( $sTable, $aKeys, $aLimit = []) {
+
+    public function getRows( $sTable, $aKeys, $aLimit = [], $cond = 'AND') {
 
     $sStmt = 'SELECT * FROM `' . $sTable . '` WHERE ';
+    $sCond = '';
     foreach ($aKeys as $key => $value) {
-      $sCond .= '`' . $key . '` = "' . $value . '" AND';
+      $sCond .= '`' . $key . '` = "' . $value . '"  '.$cond;
     }
-    
-    $pResult = $this->getResult(substr($sStmt . $sCond, 0, -3));
 
+    $pResult = $this->getResult(substr($sStmt . $sCond, 0, -3));
+    $aReturn = [];
     while ($aRow = $pResult->fetch_assoc()) {
       //var_dump($aRow);
       $aReturn[] = $aRow;
@@ -59,6 +55,21 @@ SQL;
 
     return $aReturn;
   }
+
+  public function getRowsByQuery( $query ) {
+
+  $pResult = $this->getResult($query);
+  $aReturn = [];
+  while ($aRow = $pResult->fetch_assoc()) {
+    //var_dump($aRow);
+    $aReturn[] = $aRow;
+  }
+
+  $pResult->free();
+
+  return $aReturn;
+}
+
 
   public function getRow($sQuery) {
 
@@ -79,7 +90,7 @@ SQL;
       $sCond .= '`' . $key . '` = "' . $value . '" AND';
     }
     $aRow = $this->getRow(substr($sStmt . $sCond, 0, -3));
-    var_dump(substr($sStmt . $sCond, 0, -3), $aRow);
+    //var_dump(substr($sStmt . $sCond, 0, -3), $aRow);
     if ($aRow['count'] > 0) {
       //UPDATE
       $sStmt = 'UPDATE `' . $sTable . '` SET ';
@@ -100,6 +111,13 @@ SQL;
     }
 
     return $aRow;
+  }
+
+  public function insert($sTable, $aData){
+    foreach ($aData as $key => $value)
+      $aData[$key] = "'$aData[$key]'";
+    $sStmt = 'INSERT INTO `' . $sTable . '` (`' . implode(array_keys($aData), '` ,`') . '`) VALUES (' . implode(array_values($aData), ' ,') . ') ';
+    return $this->getResult($sStmt);
   }
 
   public function update($sTable, $aKeys, $aData) {
@@ -124,5 +142,4 @@ SQL;
 
 }
 
-$objDb = new Jdb('feiapp', _DB_HOST, 'feiapp', 'PfkxZL0j2w', _DB_SOCK);
-
+$objDb = new Jdb(_DB_NAME, _DB_HOST, _DB_USER, _DB_PASSWD, _DB_SOCK);
